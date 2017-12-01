@@ -102,6 +102,7 @@ object TypeConverter {
   implicit object BooleanConverter extends TypeConverter[Boolean] {
     def targetTypeTag = BooleanTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Boolean]
       case x: java.lang.Boolean => x
       case x: java.lang.Integer => x != 0
       case x: java.lang.Long => x != 0L
@@ -126,6 +127,7 @@ object TypeConverter {
   implicit object ByteConverter extends TypeConverter[Byte] {
     def targetTypeTag = ByteTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Byte]
       case x: Number => x.byteValue
       case x: String => x.toByte
     }
@@ -147,6 +149,7 @@ object TypeConverter {
   implicit object ShortConverter extends TypeConverter[Short] {
     def targetTypeTag = ShortTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Short]
       case x: Number => x.shortValue
       case x: String => x.toShort
     }
@@ -168,6 +171,7 @@ object TypeConverter {
   implicit object IntConverter extends TypeConverter[Int] {
     def targetTypeTag = IntTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Int]
       case x: Number => x.intValue
       case x: String => x.toInt
     }
@@ -189,6 +193,7 @@ object TypeConverter {
   implicit object LongConverter extends TypeConverter[Long] {
     def targetTypeTag = LongTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Long]
       case x: Number => x.longValue
       case x: Date => x.getTime
       case x: DateTime => x.toDate.getTime
@@ -213,6 +218,7 @@ object TypeConverter {
   implicit object FloatConverter extends TypeConverter[Float] {
     def targetTypeTag = FloatTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Float]
       case x: Number => x.floatValue
       case x: String => x.toFloat
     }
@@ -234,6 +240,7 @@ object TypeConverter {
   implicit object DoubleConverter extends TypeConverter[Double] {
     def targetTypeTag = DoubleTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Double]
       case x: Number => x.doubleValue
       case x: String => x.toDouble
     }
@@ -255,6 +262,7 @@ object TypeConverter {
   implicit object StringConverter extends NullableTypeConverter[String] {
     def targetTypeTag = StringTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[String]
       case x: Date => TimestampFormatter.format(x)
       case x: Array[Byte] => "0x" + x.map("%02x" format _).mkString
       case x: Map[_, _] => x.map(kv => convert(kv._1) + ": " + convert(kv._2)).mkString("{", ",", "}")
@@ -271,6 +279,7 @@ object TypeConverter {
   implicit object ByteBufferConverter extends NullableTypeConverter[ByteBuffer] {
     def targetTypeTag = ByteBufferTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[ByteBuffer]
       case x: ByteBuffer => x
       case x: Array[Byte] => ByteBuffer.wrap(x)
     }
@@ -283,6 +292,7 @@ object TypeConverter {
   implicit object ByteArrayConverter extends NullableTypeConverter[Array[Byte]] {
     def targetTypeTag = ByteArrayTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Array[Byte]]
       case x: Array[Byte] => x
       case x: ByteBuffer => ByteBufferUtil.toArray(x)
     }
@@ -295,6 +305,7 @@ object TypeConverter {
   implicit object DateConverter extends NullableTypeConverter[Date] {
     def targetTypeTag = DateTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[Date]
       case x: Date => x
       case x: DateTime => x.toDate
       case x: Calendar => x.getTime
@@ -321,6 +332,7 @@ object TypeConverter {
 
     val shiftLocalDate: PartialFunction[Any, java.sql.Date] = {
       case x: LocalDate => new java.sql.Date(subtractTimeZoneOffset(x.getMillisSinceEpoch))
+      case null => null.asInstanceOf[java.sql.Date]
     }
 
     //If there is no Local Date input we will use the normal date converter
@@ -336,6 +348,21 @@ object TypeConverter {
     def convertPF = DateConverter.convertPF.andThen(new DateTime(_))
   }
 
+  private val JodaLocalDateTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[JodaLocalDate]]
+  }
+
+  implicit object JodaLocalDateConverter extends NullableTypeConverter[JodaLocalDate] {
+    def targetTypeTag = JodaLocalDateTypeTag
+    def convertPF = {
+      case null => null.asInstanceOf[JodaLocalDate]
+      case x: String => JodaLocalDate.fromDateFields(TimestampParser.parse(x))
+      case x: JodaLocalDate => x
+      case x: LocalDate => new JodaLocalDate(x.getYear, x.getMonth, x.getDay)
+      case x: java.util.Date => JodaLocalDate.fromDateFields(x)
+    }
+  }
+
   private val GregorianCalendarTypeTag = SparkReflectionLock.synchronized {
     implicitly[TypeTag[GregorianCalendar]]
   }
@@ -343,7 +370,9 @@ object TypeConverter {
   implicit object GregorianCalendarConverter extends NullableTypeConverter[GregorianCalendar] {
     private[this] def calendar(date: Date): GregorianCalendar = {
       val c = new GregorianCalendar()
-      c.setTime(date)
+
+      if (date != null) c.setTime(date)
+
       c
     }
     def targetTypeTag = GregorianCalendarTypeTag
@@ -372,6 +401,7 @@ object TypeConverter {
   implicit object JavaBigIntegerConverter extends NullableTypeConverter[java.math.BigInteger] {
     def targetTypeTag = JavaBigIntegerTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[java.math.BigInteger]
       case x: BigInt => x.bigInteger
       case x: java.math.BigInteger => x
       case x: java.lang.Integer => new java.math.BigInteger(x.toString)
@@ -402,6 +432,7 @@ object TypeConverter {
   implicit object JavaBigDecimalConverter extends NullableTypeConverter[java.math.BigDecimal] {
     def targetTypeTag = JavaBigDecimalTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[java.math.BigDecimal]
       case x: Number => new java.math.BigDecimal(x.toString)
       case x: String => new java.math.BigDecimal(x)
     }
@@ -414,6 +445,7 @@ object TypeConverter {
   implicit object UUIDConverter extends NullableTypeConverter[UUID] {
     def targetTypeTag = UUIDTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[UUID]
       case x: UUID => x
       case x: String => UUID.fromString(x)
     }
@@ -426,6 +458,7 @@ object TypeConverter {
   implicit object InetAddressConverter extends NullableTypeConverter[InetAddress] {
     def targetTypeTag = InetAddressTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[InetAddress]
       case x: InetAddress => x
       case x: String => InetAddress.getByName(x)
     }
@@ -446,6 +479,7 @@ object TypeConverter {
     def addTimeZoneOffset(millis: Long) =  millis + defaultTimezone.getOffset(millis)
 
     def convertPF = {
+      case null => null.asInstanceOf[LocalDate]
       case x: LocalDate => x
       case dateRegx(y, m, d) => LocalDate.fromYearMonthDay(y.toInt, m.toInt, d.toInt)
       case x: Int => LocalDate.fromDaysSinceEpoch(x)
@@ -457,8 +491,80 @@ object TypeConverter {
   object TimeTypeConverter extends NullableTypeConverter[java.lang.Long] {
     def targetTypeTag = JavaLongTypeTag
     def convertPF = {
+      case null => null.asInstanceOf[java.lang.Long]
       case x: Date => TimeUnit.MILLISECONDS.toNanos(x.getTime)
       case x: Long => x.toLong
+    }
+  }
+
+  private val JavaLocalDateTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[JavaLocalDate]]
+  }
+
+  implicit object JavaLocalDateConverter extends NullableTypeConverter[JavaLocalDate] {
+    def targetTypeTag = JavaLocalDateTypeTag
+
+    def convertPF = {
+      case null => null.asInstanceOf[JavaLocalDate]
+      case x: JavaLocalDate => x
+      case x: String => JavaLocalDate.parse(x)
+      case x: Int => JavaLocalDate.ofEpochDay(x)
+      case x: Long => JavaLocalDate.ofEpochDay(x)
+      case x: JodaLocalDate => JavaLocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      case x: DateTime => {
+        val ld = x.toLocalDate
+        JavaLocalDate.of(x.getYear, x.getMonthOfYear, x.getDayOfMonth)
+      }
+      case x: Date => convert(JodaLocalDate.fromDateFields(x))
+    }
+  }
+
+  private val JavaLocalTimeTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.LocalTime]]
+  }
+
+  implicit object JavaLocalTimeConverter extends NullableTypeConverter[java.time.LocalTime] {
+    def targetTypeTag = JavaLocalTimeTypeTag
+
+    def convertPF = {
+      case null => null.asInstanceOf[java.time.LocalTime]
+      case x: java.time.LocalTime => x
+      case x: String => java.time.LocalTime.parse(x)
+      case x: Long => java.time.LocalTime.ofNanoOfDay(x)
+      case x: Int => java.time.LocalTime.ofNanoOfDay(x)
+    }
+  }
+
+  private val JavaDurationTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.Duration]]
+  }
+
+  implicit object JavaDurationConverter extends NullableTypeConverter[java.time.Duration] {
+    def targetTypeTag = JavaDurationTypeTag
+
+
+    def convertPF = {
+      case null => null.asInstanceOf[java.time.Duration]
+      case x: java.time.Duration => x
+      case x: String => java.time.Duration.parse(x)
+      case x: Long => java.time.Duration.ofMillis(x)
+      case x: Int => java.time.Duration.ofMillis(x)
+    }
+  }
+
+  private val JavaInstantTypeTag = SparkReflectionLock.synchronized {
+    implicitly[TypeTag[java.time.Instant]]
+  }
+
+  implicit object JavaInstantConverter extends NullableTypeConverter[java.time.Instant] {
+    def targetTypeTag = JavaInstantTypeTag
+
+    def convertPF = {
+      case null => null.asInstanceOf[java.time.Instant]
+      case x: java.time.Instant => x
+      case x: String => java.time.Instant.parse(x)
+      case x: Long => java.time.Instant.ofEpochMilli(x)
+      case x: java.sql.Timestamp => x.toInstant
     }
   }
 
