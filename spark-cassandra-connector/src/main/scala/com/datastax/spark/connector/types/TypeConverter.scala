@@ -171,7 +171,7 @@ object TypeConverter {
   implicit object IntConverter extends TypeConverter[Int] {
     def targetTypeTag = IntTypeTag
     def convertPF = {
-      case null => null.asInstanceOf[Int]
+      case null => 0
       case x: Number => x.intValue
       case x: String => x.toInt
     }
@@ -193,7 +193,7 @@ object TypeConverter {
   implicit object LongConverter extends TypeConverter[Long] {
     def targetTypeTag = LongTypeTag
     def convertPF = {
-      case null => null.asInstanceOf[Long]
+      case null => 0L
       case x: Number => x.longValue
       case x: Date => x.getTime
       case x: DateTime => x.toDate.getTime
@@ -218,7 +218,7 @@ object TypeConverter {
   implicit object FloatConverter extends TypeConverter[Float] {
     def targetTypeTag = FloatTypeTag
     def convertPF = {
-      case null => null.asInstanceOf[Float]
+      case null => 0.0f
       case x: Number => x.floatValue
       case x: String => x.toFloat
     }
@@ -240,7 +240,7 @@ object TypeConverter {
   implicit object DoubleConverter extends TypeConverter[Double] {
     def targetTypeTag = DoubleTypeTag
     def convertPF = {
-      case null => null.asInstanceOf[Double]
+      case null => 0.0d
       case x: Number => x.doubleValue
       case x: String => x.toDouble
     }
