@@ -1,0 +1,11 @@
+https://github.com/s3-wagon-private/s3-wagon-private/issues/58
+
+need to s3-wagon-private this thing, the above might help
+
+sbt package
+
+then copy artifact into .m2/repository
+
+that's how I built the beancounter jars for testing
+
+need something more solid (and there are other good uses for a private iris maven repo)
